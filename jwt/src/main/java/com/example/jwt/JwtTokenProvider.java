@@ -43,4 +43,14 @@ public class JwtTokenProvider {
                 .getPayload()
                 .getSubject();
     }
+    public long getRemainingMillis(String token) {
+        Date exp = Jwts.parser()
+                .verifyWith(key)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload()
+                .getExpiration();
+
+        return exp.getTime() - System.currentTimeMillis();
+    }
 }

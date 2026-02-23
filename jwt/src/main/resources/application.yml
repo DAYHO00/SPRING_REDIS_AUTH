@@ -9,3 +9,4 @@ spring:
 jwt:
   secret: change-this-secret-key-change-this-secret-key
   access-minutes: 30
+  refresh-days: 7

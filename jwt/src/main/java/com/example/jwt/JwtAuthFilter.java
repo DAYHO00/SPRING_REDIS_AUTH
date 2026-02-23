@@ -16,18 +16,28 @@ import java.util.Collections;
 public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider tokenProvider;
+    private final AccessTokenBlacklistService blacklistService;
 
-    public JwtAuthFilter(JwtTokenProvider tokenProvider) {
+    public JwtAuthFilter(JwtTokenProvider tokenProvider,
+                         AccessTokenBlacklistService blacklistService) {
         this.tokenProvider = tokenProvider;
+        this.blacklistService = blacklistService;
     }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
 
-        String auth = request.getHeader("Authorization"); // "Bearer xxx"
+        String auth = request.getHeader("Authorization");
+
         if (auth != null && auth.startsWith("Bearer ")) {
             String token = auth.substring(7);
+
+            // ✅ 블랙리스트면 즉시 차단
+            if (blacklistService.isBlacklisted(token)) {
+                response.setStatus(401);
+                return;
+            }
 
             try {
                 String username = tokenProvider.getUsername(token);
@@ -38,7 +48,6 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 SecurityContextHolder.getContext().setAuthentication(authentication);
 
             } catch (Exception e) {
-                // 토큰이 이상하면 인증 없이 진행 → 결국 보호 API면 401
                 SecurityContextHolder.clearContext();
             }
         }
